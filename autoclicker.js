@@ -1,5 +1,7 @@
 (()=>{
+    alert("Autoclicker loaded!(1)");
     if(window.__ac) return;
+    alert("Autoclicker loaded!(2)");
 
     const a = window.__ac = {
         enabled: true,
@@ -169,4 +171,5 @@
     cpb.id = "ac-cpb";
     stop.id = "ac-stop";
     toggle.id = "ac-toggle";
+    alert("Autoclicker loaded!(3)");
 })();
