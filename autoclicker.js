@@ -5,8 +5,10 @@
         enabled:true,
         running:false,
         target:null,
-        delay:0,
-        timer:null
+        cps:1000,
+        timer:null,
+        last:performance.now(),
+        remainder:0
     };
 
     const ui=document.createElement("div");
@@ -27,10 +29,11 @@
     `;
 
     ui.innerHTML=`
-        <b>Click Delay</b><br>
-        <input id="ac-input" type="number" min="0" value="0"
-        style="width:100px;margin-top:5px">
-        <div id="ac-current">Delay: 0 ms</div>
+        <b>Clicks Per Second</b><br>
+        <input id="ac-input" type="number" min="1" max="1000000" value="1000"
+        style="width:110px;margin-top:5px">
+        <div id="ac-current">CPS: 1000</div>
+        <small>50000+ CPS can lag your device!</small>
     `;
 
     document.body.appendChild(ui);
@@ -80,13 +83,13 @@
     const checkbox=toggle.querySelector("input");
 
     input.addEventListener("input",()=>{
-        let n=parseFloat(input.value);
+        let n=parseInt(input.value)||1;
 
-        if(isNaN(n)||n<0)n=0;
+        n=Math.max(1,Math.min(1000000,n));
 
-        a.delay=n;
+        a.cps=n;
         input.value=n;
-        current.textContent="Delay: "+n+" ms";
+        current.textContent="CPS: "+n;
     });
 
     function stopClicking(){
@@ -98,21 +101,35 @@
             a.timer=null;
         }
 
+        a.last=performance.now();
+        a.remainder=0;
+
         stop.style.display="none";
     }
 
     function clickLoop(){
         if(!a.running||!a.target)return;
 
-        a.target.click();
+        const now=performance.now();
+        const elapsed=now-a.last;
 
-        if(!a.running||!a.target)return;
+        a.last=now;
 
-        if(a.delay<=0){
-            a.timer=setTimeout(clickLoop,0);
-        }else{
-            a.timer=setTimeout(clickLoop,a.delay);
+        const exact=elapsed*a.cps/1000+a.remainder;
+        const clicks=Math.floor(exact);
+
+        a.remainder=exact-clicks;
+
+        if(clicks>0){
+            const target=a.target;
+
+            for(let i=0;i<clicks;i++){
+                if(!a.running||a.target!==target)return;
+                target.click();
+            }
         }
+
+        a.timer=setTimeout(clickLoop,0);
     }
 
     stop.addEventListener("click",e=>{
@@ -141,6 +158,8 @@
 
         a.target=e.target;
         a.running=true;
+        a.last=performance.now();
+        a.remainder=0;
 
         stop.style.display="block";
 
