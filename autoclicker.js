@@ -5,7 +5,7 @@
         enabled:true,
         running:false,
         target:null,
-        cps:1000,
+        delay:0,
         timer:null,
         last:performance.now(),
         remainder:0
@@ -29,11 +29,10 @@
     `;
 
     ui.innerHTML=`
-        <b>Clicks Per Second</b><br>
-        <input id="ac-input" type="number" min="1" max="1000000" value="1000"
+        <b>Click Delay</b><br>
+        <input id="ac-input" type="number" min="0" value="0"
         style="width:110px;margin-top:5px">
-        <div id="ac-current">CPS: 1000</div>
-        <small>50000+ CPS can lag your device!</small>
+        <div id="ac-current">Delay: 0 ms</div>
     `;
 
     document.body.appendChild(ui);
@@ -83,13 +82,13 @@
     const checkbox=toggle.querySelector("input");
 
     input.addEventListener("input",()=>{
-        let n=parseInt(input.value)||1;
+        let n=parseFloat(input.value);
 
-        n=Math.max(1,Math.min(1000000,n));
+        if(isNaN(n)||n<0)n=0;
 
-        a.cps=n;
+        a.delay=n;
         input.value=n;
-        current.textContent="CPS: "+n;
+        current.textContent="Delay: "+n+" ms";
     });
 
     function stopClicking(){
@@ -112,20 +111,19 @@
 
         const now=performance.now();
         const elapsed=now-a.last;
-
         a.last=now;
 
-        const exact=elapsed*a.cps/1000+a.remainder;
-        const clicks=Math.floor(exact);
+        if(a.delay<=0){
+            a.target.click();
+        }else{
+            const exact=elapsed/a.delay+a.remainder;
+            const clicks=Math.floor(exact);
 
-        a.remainder=exact-clicks;
-
-        if(clicks>0){
-            const target=a.target;
+            a.remainder=exact-clicks;
 
             for(let i=0;i<clicks;i++){
-                if(!a.running||a.target!==target)return;
-                target.click();
+                if(!a.running||!a.target)return;
+                a.target.click();
             }
         }
 
